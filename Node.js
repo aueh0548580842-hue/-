@@ -2,51 +2,35 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-// רשימת מספרי זיהוי אקראיים לבחירה - שנה את המספרים האלו למספרים שלך
-const randomCallerIds = [
-    '035551234',
-    '026667890',
-    '048884321',
-    '077111222',
-    '050999887'
-];
+// רשימת מספרי זיהוי אקראיים - ניתן להוסיף כאן מספרים כרצונך
+const randomCallerIds = ['035551234', '026667890', '048884321', '123456', '077111222'];
 
 app.get('/ivr-handler', (req, res) => {
-    // קבלת הפרמטרים מה-IVR
-    let callerId = req.query.id_selection; // מה שהמשתמש הקיש
-    const destination = req.query.phone_to_dial; // מספר היעד לחיוג
+    const callerIdRaw = req.query.id_selection; 
+    const destinationRaw = req.query.phone_to_dial;
 
-    // הגנה: אם אין מספר יעד, אי אפשר להמשיך
-    if (!destination) {
+    if (!destinationRaw) {
         return res.send("id=error&message=no_destination");
     }
 
-    // לוגיקה 1: לחיצה על # בלבד (הקלט ריק) -> חיוג חסוי
-    if (!callerId || callerId.trim() === "") {
-        console.log("Empty input - Routing as Restricted/Private");
-        return res.send(`routing_number=${destination}&set_caller_id=private`);
+    let finalCallerId;
+
+    // בדיקת סוג הזיהוי שנבחר
+    if (callerIdRaw === '*' || callerIdRaw === '*#') {
+        // בחירת מספר אקראי מהרשימה
+        finalCallerId = randomCallerIds[Math.floor(Math.random() * randomCallerIds.length)];
+    } else if (!callerIdRaw || callerIdRaw === "" || callerIdRaw === "#") {
+        // לחיצה על # בלבד - חיוג חסוי
+        finalCallerId = "private";
+    } else {
+        // ניקוי המספר שהוקש ידנית
+        finalCallerId = callerIdRaw.replace(/[^0-9]/g, '');
     }
 
-    // לוגיקה 2: לחיצה על * ואז # -> בחירת מספר אקראי מהרשימה
-    if (callerId.includes('*')) {
-        const randomIndex = Math.floor(Math.random() * randomCallerIds.length);
-        const selectedRandomId = randomCallerIds[randomIndex];
-        console.log(`Random selection triggered: ${selectedRandomId}`);
-        return res.send(`routing_number=${destination}&set_caller_id=${selectedRandomId}`);
-    }
-
-    // לוגיקה 3: הוקש מספר זיהוי (ניקוי תווים שאינם ספרות)
-    const cleanId = callerId.replace(/[^0-9]/g, '');
-
-    if (cleanId.length >= 1 && cleanId.length <= 20) {
-        console.log(`Manual ID selected: ${cleanId}`);
-        return res.send(`routing_number=${destination}&set_caller_id=${cleanId}`);
-    }
-
-    // ברירת מחדל למקרה של קלט לא תקין
-    res.send("id=error&message=invalid_input");
+    // שליחת הפקודה למערכת ה-IVR
+    res.send(`routing_number=${destinationRaw}&set_caller_id=${finalCallerId}`);
 });
 
 app.listen(port, () => {
-    console.log(`IVR Server is running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
