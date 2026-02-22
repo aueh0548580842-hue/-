@@ -1,36 +1,34 @@
 const express = require('express');
 const app = express();
-const port = 3000;
-
-// רשימת מספרי זיהוי אקראיים - ניתן להוסיף כאן מספרים כרצונך
-const randomCallerIds = ['035551234', '026667890', '048884321', '123456', '077111222'];
 
 app.get('/ivr-handler', (req, res) => {
-    const callerIdRaw = req.query.id_selection; 
-    const destinationRaw = req.query.phone_to_dial;
+    const idSelection = req.query.id_selection;
+    const phoneToDial = req.query.phone_to_dial;
 
-    if (!destinationRaw) {
-        return res.send("id=error&message=no_destination");
+    // שלב א: אם עדיין לא הוקש מספר זיהוי
+    if (!idSelection) {
+        return res.send(`read=t-נא הקש את מספר הזיהוי הרצוי, למספר אקראי הקש כוכבית, ובסיום סולמית=id_selection,no,10,1,7,#,yes`);
     }
 
-    let finalCallerId;
+    // שלב ב: אם יש זיהוי אבל עדיין לא הוקש מספר יעד
+    if (!phoneToDial) {
+        return res.send(`read=t-נא הקש את מספר היעד לחיוג ובסיום סולמית=phone_to_dial,no,10,1,7,#,yes&id_selection=${idSelection}`);
+    }
 
-    // בדיקת סוג הזיהוי שנבחר
-    if (callerIdRaw === '*' || callerIdRaw === '*#') {
-        // בחירת מספר אקראי מהרשימה
-        finalCallerId = randomCallerIds[Math.floor(Math.random() * randomCallerIds.length)];
-    } else if (!callerIdRaw || callerIdRaw === "" || callerIdRaw === "#") {
-        // לחיצה על # בלבד - חיוג חסוי
-        finalCallerId = "private";
+    // שלב ג: יש את כל הנתונים - מבצעים חיוג
+    let callerId = "";
+    if (idSelection === "*") {
+        callerId = "rand";
+    } else if (idSelection === "" || idSelection === "#") {
+        callerId = "private";
     } else {
-        // ניקוי המספר שהוקש ידנית
-        finalCallerId = callerIdRaw.replace(/[^0-9]/g, '');
+        callerId = idSelection;
     }
 
-    // שליחת הפקודה למערכת ה-IVR
-    res.send(`routing_number=${destinationRaw}&set_caller_id=${finalCallerId}`);
+    res.send(`routing_number=${phoneToDial}&set_caller_id=${callerId}`);
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
