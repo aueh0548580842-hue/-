@@ -5,17 +5,18 @@ app.get('/ivr-handler', (req, res) => {
     const idSelection = req.query.id_selection;
     const phoneToDial = req.query.phone_to_dial;
 
-    // שלב א: אם עדיין לא הוקש מספר זיהוי
+    // שלב א: קליטת מספר זיהוי
     if (!idSelection) {
-        return res.send(`read=t-נא הקש את מספר הזיהוי הרצוי, למספר אקראי הקש כוכבית, ובסיום סולמית=id_selection,no,10,1,7,#,yes`);
+        return res.send(`read=t-נא הקש את מספר הזיהוי הרצוי, למספר אקראי הקש כוכבית, ובסיום סולמית=id_selection,no,15,1,7,#,yes`);
     }
 
-    // שלב ב: אם יש זיהוי אבל עדיין לא הוקש מספר יעד
+    // שלב ב: קליטת מספר יעד (כולל חו"ל)
     if (!phoneToDial) {
-        return res.send(`read=t-נא הקש את מספר היעד לחיוג ובסיום סולמית=phone_to_dial,no,10,1,7,#,yes&id_selection=${idSelection}`);
+        // שינינו את המקסימום ל-15 ספרות כדי לאפשר קידומות בינלאומיות
+        return res.send(`read=t-נא הקש את מספר היעד. לחיוג לחוץ לארץ הקש אפס אפס, קידומת מדינה ומספר, ובסיום סולמית=phone_to_dial,no,15,1,7,#,yes&id_selection=${idSelection}`);
     }
 
-    // שלב ג: יש את כל הנתונים - מבצעים חיוג
+    // שלב ג: עיבוד הזיהוי וביצוע חיוג
     let callerId = "";
     if (idSelection === "*") {
         callerId = "rand";
@@ -25,6 +26,7 @@ app.get('/ivr-handler', (req, res) => {
         callerId = idSelection;
     }
 
+    // שליחת פקודת חיוג
     res.send(`routing_number=${phoneToDial}&set_caller_id=${callerId}`);
 });
 
