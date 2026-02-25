@@ -5,28 +5,33 @@ app.get('/ivr-handler', (req, res) => {
     const idSelection = req.query.id_selection;
     const phoneToDial = req.query.phone_to_dial;
 
-    // שלב א: קליטת מספר זיהוי
+    // שלב א: קליטת מספר זיהוי (מאפשר כוכבית)
     if (!idSelection) {
-        return res.send(`read=t-נא הקש את מספר הזיהוי הרצוי, למספר אקראי הקש כוכבית, ובסיום סולמית=id_selection,no,15,1,7,#,yes`);
+        // הוספנו 0123456789* כדי לאפשר הקשת כוכבית
+        return res.send(`read=t-נא הקש את מספר הזיהוי הרצוי, למספר אקראי הקש כוכבית, ובסיום סולמית=id_selection,no,15,1,7,#,yes,0123456789*`);
     }
 
-    // שלב ב: קליטת מספר יעד (כולל חו"ל)
-    if (!phoneToDial) {
-        // שינינו את המקסימום ל-15 ספרות כדי לאפשר קידומות בינלאומיות
-        return res.send(`read=t-נא הקש את מספר היעד. לחיוג לחוץ לארץ הקש אפס אפס, קידומת מדינה ומספר, ובסיום סולמית=phone_to_dial,no,15,1,7,#,yes&id_selection=${idSelection}`);
-    }
-
-    // שלב ג: עיבוד הזיהוי וביצוע חיוג
+    // קביעת טקסט האישור
+    let idTypeMessage = "";
     let callerId = "";
+
     if (idSelection === "*") {
         callerId = "rand";
+        idTypeMessage = "בחרת בזיהוי אקראי.";
     } else if (idSelection === "" || idSelection === "#") {
         callerId = "private";
+        idTypeMessage = "בחרת בזיהוי חסוי.";
     } else {
         callerId = idSelection;
+        idTypeMessage = `הזיהוי שנבחר הוא ${idSelection.split('').join(' ')}.`;
     }
 
-    // שליחת פקודת חיוג
+    // שלב ב: קליטת מספר יעד
+    if (!phoneToDial) {
+        return res.send(`read=t-${idTypeMessage} נא הקש כעת את מספר היעד ובסיום סולמית=phone_to_dial,no,15,1,7,#,yes,0123456789&id_selection=${idSelection}`);
+    }
+
+    // שלב ג: ביצוע החיוג
     res.send(`routing_number=${phoneToDial}&set_caller_id=${callerId}`);
 });
 
