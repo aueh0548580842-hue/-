@@ -1,7 +1,12 @@
 {
- "name": "ivr-api",
- "version": "1.0.0",
- "dependencies": {
-   "express": "^4.18.2"
- }
+  "name": "ivr-api",
+  "version": "1.0.0",
+  "description": "API for Yemot HaMashiach",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
